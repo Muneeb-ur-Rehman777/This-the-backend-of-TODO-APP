@@ -12,24 +12,28 @@ let tasks = [];
 let completedTasks = [];
 
 app.get('/', (req, res) => {
-    res.send('Hello World!')
+    res.status(200).json(tasks)
 })
 
 app.post('/add', (req, res) => {
-    const { Title, description ,id,date} = req.body
+    const { Title, description, id, date } = req.body
     let task = {
         Title: Title,
-        Description: description,
-        id:id,
-        date:date
+        description: description,
+        id: id,
+        date: date
     }
     tasks.push(task)
     res.status(200).json({ message: "Task added succesfully" })
-
 })
 
+app.get('/home',(req,res)=>{
+    res.status(200).json(tasks)
+})
+
+
 app.delete('/delete/:id', (req, res) => {
-    const  id  = Number(req.params.id)
+    const id = Number(req.params.id)
     let index = tasks.findIndex((obj) => { return obj.id == id })
     if (index != -1) {
         tasks.splice(index, 1)
@@ -44,42 +48,42 @@ app.put('/update/:id', (req, res) => {
     const { Title, description } = req.body
     const id = Number(req.params.id);
 
-    let index = tasks.findIndex((obj)=>{
-        return obj.id===id
+    let index = tasks.findIndex((obj) => {
+        return obj.id === id
     })
-    if(index==-1){
-        res.status(404).json({message:"task not fount"})
+    if (index == -1) {
+        res.status(404).json({ message: "task not fount" })
 
     }
-    else{
-        
-    tasks[index].Title=Title;
-    tasks[index].description= description;
+    else {
+
+        tasks[index].Title = Title;
+        tasks[index].description = description;
 
     }
 
 
-    res.status(200).json({message:"Updated successfully"})
+    res.status(200).json({ message: "Updated successfully" })
 
 
 })
 
 
-app.delete('/transfer/:id',(req,res)=>{
-    const id  = Number(req.params.id)
+app.delete('/transfer/:id', (req, res) => {
+    const id = Number(req.params.id)
 
-    let index = tasks.findIndex((obj)=>{
-       return obj.id===id
+    let index = tasks.findIndex((obj) => {
+        return obj.id === id
     })
 
-    let moveObject = tasks.splice(index,1)[0]
+    let moveObject = tasks.splice(index, 1)[0]
 
     completedTasks.push(moveObject);
-    res.status(200).json({message:"od"})
+    res.status(200).json({ message: "od" })
 
 })
 
-app.get("/completedTasks",(req,res)=>{
+app.get("/completedTasks", (req, res) => {
     res.status(200).json(completedTasks)
 })
 
