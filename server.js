@@ -1,90 +1,105 @@
 const express = require('express')
 const app = express()
 const port = 3000
+const mongoose = require('mongoose')
+
 
 const cors = require('cors')
 app.use(express.json());
-
-
 app.use(cors());
 
-let tasks = [];
-let completedTasks = [];
-
-app.get('/', (req, res) => {
-    res.status(200).json(tasks)
+//connection
+mongoose.connect('mongodb://127.0.0.1:27017', {
+}).then(() => {
+    console.log("Connected Succesfully")
+}).catch((err) => {
+    console.log("There is an error", err)
 })
 
-app.post('/add', (req, res) => {
+// Schema
+const taskSchema = new mongoose.Schema({
+    Title: String,
+    description: String,
+    id: Number,
+    date: String
+})
+
+// collection
+const taskss = mongoose.model("Tasks", taskSchema)
+
+
+
+app.get('/doahs', async (req, res) => {
+    const users = await taskss.find({})
+    res.status(200).json(users)
+})
+
+app.post('/add', async (req, res) => {
     const { Title, description, id, date } = req.body
-    let task = {
-        Title: Title,
-        description: description,
-        id: id,
-        date: date
+    try {
+        const newTask = new taskss({
+            Title: Title,
+            description: description,
+            id: id,
+            date: date
+        })
+        await newTask.save();
+        res.status(200).json({ message: "Task added succesfully" })
     }
-    tasks.push(task)
-    res.status(200).json({ message: "Task added succesfully" })
+    catch (err) {
+        res.status(200).json(err)
+    }
 })
 
-app.get('/home',(req,res)=>{
-    res.status(200).json(tasks)
-})
-
-
-app.delete('/delete/:id', (req, res) => {
+app.delete('/delete/:id', async (req, res) => {
     const id = Number(req.params.id)
-    let index = tasks.findIndex((obj) => { return obj.id == id })
-    if (index != -1) {
-        tasks.splice(index, 1)
-        res.status(200).json({ message: "Deleted" })
-    }
-    else {
-        res.status(404).json({ message: "Task not available" })
-    }
+    await taskss.deleteOne({ id: id })
+    res.status(200).json({ message: "Data deleted" })
+
 })
 
-app.put('/update/:id', (req, res) => {
+app.put('/update/:id', async (req, res) => {
     const { Title, description } = req.body
     const id = Number(req.params.id);
-
-    let index = tasks.findIndex((obj) => {
-        return obj.id === id
-    })
-    if (index == -1) {
-        res.status(404).json({ message: "task not fount" })
+    try {
+        await taskss.updateOne({ id: id }, { $set: { Title: Title, description: description } })
+        return res.status(200).json({ message: "udated from DataBase" })
+    }
+    catch (err) {
+        return res.status(200).json({ message: "err", err })
 
     }
-    else {
-
-        tasks[index].Title = Title;
-        tasks[index].description = description;
-
-    }
-
-
-    res.status(200).json({ message: "Updated successfully" })
-
-
 })
 
 
-app.delete('/transfer/:id', (req, res) => {
+
+app.delete('/transfer/:id', async (req, res) => {
     const id = Number(req.params.id)
 
-    let index = tasks.findIndex((obj) => {
-        return obj.id === id
-    })
+    try {
+        const specificData = await taskss.findOne({ id: id })
 
-    let moveObject = tasks.splice(index, 1)[0]
+        await taskss.deleteOne({ id: id })
+        const savedData = specificData.toObject();
+        const date = savedData.id
+        delete savedData.id
 
-    completedTasks.push(moveObject);
-    res.status(200).json({ message: "od" })
+        const completedTask = mongoose.model("completedTasks", taskSchema)
+        let ne = new completedTask({ ...savedData,id:date })
+        await ne.save();
+
+        res.status(200).json({ message: "od" })
+    }
+    catch (err) {
+        res.status(500).json({ message: "There is an error in server" })
+
+    }
 
 })
 
-app.get("/completedTasks", (req, res) => {
-    res.status(200).json(completedTasks)
+app.get("/completedTasks", async (req, res) => {
+    const allDataOfCompletedTasks = await completedTask.find({})
+    res.status(200).json(allDataOfCompletedTasks)
 })
 
 app.listen(port, () => {
